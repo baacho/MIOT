@@ -1,0 +1,21 @@
+from gpiozero import DigitalInputDevice
+from time import sleep
+
+ir = DigitalInputDevice(17)
+
+print("IR Sensor Detection Started")
+
+try:
+    while True:
+        if ir.value == 0:
+            print("Object Detected!")
+        else:
+            print("No Object Detected")
+
+        sleep(0.5)
+
+except KeyboardInterrupt:
+    print("Program Stopped")
+
+finally:
+    ir.close()

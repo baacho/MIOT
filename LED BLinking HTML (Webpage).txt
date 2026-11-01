@@ -1,0 +1,138 @@
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+import RPi.GPIO as GPIO
+import threading
+import time
+
+LED = 17
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(LED, GPIO.OUT)
+GPIO.output(LED, GPIO.LOW)
+
+blinking = threading.Event()
+
+def blink_led():
+    while True:
+        if blinking.is_set():
+            GPIO.output(LED, GPIO.HIGH)
+            time.sleep(0.5)
+
+            GPIO.output(LED, GPIO.LOW)
+            time.sleep(0.5)
+        else:
+            time.sleep(0.1)
+
+threading.Thread(target=blink_led, daemon=True).start()
+
+html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Raspberry Pi LED Control</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial;
+            background: lightblue;
+            padding-top: 70px;
+        }
+
+        h1 {
+            color: darkblue;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 20px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .on { background: green; }
+        .off { background: red; }
+        .blink { background: blue; }
+
+        #status {
+            margin-top: 30px;
+            color: darkblue;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Raspberry Pi LED Control</h1>
+
+    <button class="on" onclick="sendCommand('on')">LED ON</button>
+    <button class="off" onclick="sendCommand('off')">LED OFF</button>
+    <button class="blink" onclick="sendCommand('blink')">BLINK LED</button>
+
+    <h2 id="status">LED is OFF</h2>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/' + command)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('status').innerHTML = data;
+            })
+            .catch(error => {
+                document.getElementById('status').innerHTML = 'Connection error';
+            });
+        }
+    </script>
+</body>
+</html>
+"""
+
+class LEDControl(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+
+        if self.path == "/":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode())
+
+        elif self.path == "/on":
+            blinking.clear()
+            GPIO.output(LED, GPIO.HIGH)
+            self.send_message("LED is ON")
+
+        elif self.path == "/off":
+            blinking.clear()
+            GPIO.output(LED, GPIO.LOW)
+            self.send_message("LED is OFF")
+
+        elif self.path == "/blink":
+            blinking.set()
+            self.send_message("LED is BLINKING")
+
+        else:
+            self.send_message("Invalid command", 404)
+
+    def send_message(self, message, status=200):
+        self.send_response(status)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(message.encode())
+
+try:
+    server = ThreadingHTTPServer(("0.0.0.0", 8000), LEDControl)
+
+    print("LED Control Server Started!")
+    print("Open your browser using:")
+    print("http://RASPBERRY_PI_IP:8000")
+
+    server.serve_forever()
+
+except KeyboardInterrupt:
+    print("Program stopped")
+
+finally:
+    blinking.clear()
+    GPIO.output(LED, GPIO.LOW)
+    GPIO.cleanup()

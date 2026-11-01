@@ -1,0 +1,77 @@
+import RPi.GPIO as GPIO
+import time
+
+motor_pins = [17, 18, 27, 22]
+
+GPIO.setmode(GPIO.BCM)
+
+for pin in motor_pins:
+    GPIO.setup(pin, GPIO.OUT)
+    GPIO.output(pin, 0)
+
+sequence = [
+    [1, 0, 0, 0],
+    [1, 1, 0, 0],
+    [0, 1, 0, 0],
+    [0, 1, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 1],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
+]
+
+def rotate_clockwise():
+    print("Motor rotating CLOCKWISE")
+
+    for step in sequence:
+        for i in range(4):
+            GPIO.output(motor_pins[i], step[i])
+        time.sleep(0.003)
+
+def rotate_anticlockwise():
+    print("Motor rotating ANTICLOCKWISE")
+
+    for step in reversed(sequence):
+        for i in range(4):
+            GPIO.output(motor_pins[i], step[i])
+        time.sleep(0.003)
+
+def stop_motor():
+    for pin in motor_pins:
+        GPIO.output(pin, 0)
+
+    print("Motor STOPPED")
+
+try:
+    while True:
+        print("\n--- STEPPER MOTOR CONTROL ---")
+        print("1. Clockwise")
+        print("2. Anticlockwise")
+        print("3. Stop")
+        print("4. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            for i in range(512):
+                rotate_clockwise()
+
+        elif choice == "2":
+            for i in range(512):
+                rotate_anticlockwise()
+
+        elif choice == "3":
+            stop_motor()
+
+        elif choice == "4":
+            break
+
+        else:
+            print("Invalid choice")
+
+except KeyboardInterrupt:
+    print("Program stopped")
+
+finally:
+    stop_motor()
+    GPIO.cleanup()

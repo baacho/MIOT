@@ -1,0 +1,20 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial Bluetooth(10, 11);
+
+void setup() {
+    Serial.begin(9600);
+    Bluetooth.begin(9600);
+
+    Serial.println("================================");
+    Serial.println("     HC-05 BLUETOOTH TEST");
+    Serial.println("================================");
+    Serial.println("Waiting for mobile messages...");
+}
+
+void loop() {
+    while (Bluetooth.available()) {
+        char data = Bluetooth.read();
+        Serial.print(data);
+    }
+}

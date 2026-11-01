@@ -1,0 +1,21 @@
+from gpiozero import MotionSensor
+from time import sleep
+
+pir = MotionSensor(17)
+
+print("Waiting for PIR sensor...")
+
+try:
+    while True:
+        if pir.motion_detected:
+            print("Motion detected!")
+        else:
+            print("No motion")
+
+        sleep(1)
+
+except KeyboardInterrupt:
+    print("Stopped")
+
+finally:
+    pir.close()
